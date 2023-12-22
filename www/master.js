@@ -6,8 +6,6 @@ window.addEventListener("load", () => {
         constructor(tokens, maxs) {
             this.tokens = tokens;
             this.maxs = maxs;
-            console.log("Model contains", Object.keys(this.tokens).length, "tokens");
-            console.log(this.maxs);
         }
     }
 
@@ -69,12 +67,8 @@ window.addEventListener("load", () => {
         throw new Error(errorMessage);
     }
 
-    function validateQuery(query) {
-        const cleanedQuery = query.toLocaleLowerCase().trim();
-        if (!cleanedQuery.match(/^[a-z]+$/)) {
-            alertAndThrowError("Query contains illegal characters. Only ASCII letters are allowed.");
-        }
-        return cleanedQuery;
+    function preprocessQuery(query) {
+        return query.toLocaleLowerCase().trim().replace(/[^a-z]/, "");
     }
 
     function* iterateSuffixes(string) {
@@ -162,29 +156,42 @@ window.addEventListener("load", () => {
         }
     }
 
-    function computeTopKPermutations(model, query, k) {
+    function computeTopPermutations(model, query, k=10, timeoutSeconds=5) {
         const iterator = iteratePermutations(model, query);
         const permutations = [];
+        const timeStart = new Date();
+        let timeout = false;
         while (true) {
+            const elapsedMillis = (new Date() - timeStart);
+            if (elapsedMillis > timeoutSeconds * 1000) {
+                timeout = true;
+                break;
+            }
             const item = iterator.next();
             if (item.done) break;
             permutations.push(item.value);
         }
         permutations.sort((a, b) => b.score - a.score);
-        return permutations.slice(0, k);
+        return {
+            permutations: permutations.slice(0, k),
+            timeout: timeout,
+        }
     }
 
     document.getElementById("form-query").addEventListener("submit", (event) => {
         event.preventDefault();
         if (model == null) alertAndThrowError("Model not loaded");
         const formData = new FormData(event.target);
-        const query = validateQuery(formData.get("query"));
+        const query = preprocessQuery(formData.get("query"));
         const output = document.getElementById("pre-output");
         output.innerHTML = "Computing…";
         setTimeout(() => {
-            const permutations = computeTopKPermutations(model, query, 20);
+            const result = computeTopPermutations(model, query);
             output.innerHTML = "";
-            permutations.forEach(permuation => {
+            if (result.timeout) {
+                output.innerHTML += "Computation timed out. Results might be bad.\n";
+            }
+            result.permutations.forEach(permuation => {
                 output.innerHTML += `${permuation.word} (${permuation.score})\n`
             });
         }, 1);
