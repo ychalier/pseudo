@@ -100,7 +100,7 @@ class Model(dict):
 
 class Trainer:
 
-    def __init__(self, max_token_length:int=4, min_token_occs:int=3) -> None:
+    def __init__(self, max_token_length:int=4, min_token_occs:int=0) -> None:
         self.max_token_length: int = max_token_length
         self.min_token_occs: int = min_token_occs
         self.model: Model = Model()
@@ -135,17 +135,6 @@ class Trainer:
                 blacklist.append(token)
         for token in blacklist:
             del self.model[token]
-    
-    def normalize(self) -> None:
-        maxs = {}
-        for token in self.model:
-            n = len(token)
-            maxs.setdefault(n, 0)
-            maxs[n] = max(maxs[n], max(self.model[token].values()))
-        for token in self.model:
-            n = len(token)
-            for letter in self.model[token]:
-                self.model[token][letter] /= maxs[n]
 
     def train(self, *paths:str) -> Model:
         for path in paths:
@@ -155,20 +144,19 @@ class Trainer:
         print("Model contains", len(self.model), "tokens")
         self.prune()
         print("After pruning, model contains", len(self.model), "tokens")
-        self.normalize()
         return self.model
 
 
-# paths = [
-#     "resources/datasets/les-miserables-tome-1-fantine.txt",
-#     "resources/datasets/les-miserables-tome-2-cosette.txt",
-#     "resources/datasets/les-miserables-tome-3-marius.txt",
-#     "resources/datasets/les-miserables-tome-4.txt",
-#     "resources/datasets/les-miserables-tome-5-jean-valjean.txt",
-# ]
-# Trainer().train(*paths).to_tsv("model.tsv")
+paths = [
+    "resources/datasets/les-miserables-tome-1-fantine.txt",
+    "resources/datasets/les-miserables-tome-2-cosette.txt",
+    "resources/datasets/les-miserables-tome-3-marius.txt",
+    "resources/datasets/les-miserables-tome-4.txt",
+    "resources/datasets/les-miserables-tome-5-jean-valjean.txt",
+]
+Trainer().train(*paths).to_tsv("model.tsv")
 
 model = Model.from_tsv("model.tsv")
-permutations = list(model.iterate_permutations("sanial"))
+permutations = list(model.iterate_permutations("chalier"))
 permutations.sort(key=lambda x: -x[1])
 print(permutations[:10])

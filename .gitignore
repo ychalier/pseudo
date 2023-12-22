@@ -130,6 +130,5 @@ db.sqlite3
 
 *.json
 *.zip
-*.html
 ignore/
 *.tsv
