@@ -1,1 +1,2 @@
-zip $PSScriptRoot\..\www\model.zip $PSScriptRoot\tokens.tsv $PSScriptRoot\firstnames.txt $PSScriptRoot\streets.txt
+Set-Location $PSScriptRoot
+zip $PSScriptRoot\..\www\model.zip tokens.tsv firstnames.txt streets.txt

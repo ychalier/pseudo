@@ -3,6 +3,7 @@ importScripts("zip.min.js");
 
 var model;
 var prefixSets;
+var interrupt = false;
 
 
 class Model {
@@ -146,6 +147,7 @@ function insertInSortedArray(array, element) {
 
 
 function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenLength, minimumTokenOccurrences) {
+    if (interrupt) return;
     if (letters.length == 0) {
         let score = 0;
         const suffixes = iterateSuffixes(word);
