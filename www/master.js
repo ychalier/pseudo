@@ -1,6 +1,7 @@
 window.addEventListener("load", () => {
 
-    const MINIMUM_TOKEN_OCCURRENCES = 10;
+    const MINIMUM_TOKEN_LENGTH = 2;
+    const MINIMUM_TOKEN_OCCURRENCES = 1;
 
     class Model {
 
@@ -133,24 +134,47 @@ window.addEventListener("load", () => {
     function setsDifference(a, b) {
         return new Set([...a].filter(i => !b.has(i)));
     }
+    
+    /**
+     * Insert an element in a fixed size array, sorted in ascending order.
+     */
+    function insertInSortedArray(array, element) {
+        if (element > array[array.length - 1]) {
+            array.push(element);
+        } else {
+            for (let i = 0; i < array.length; i++) {
+                if (element < array[i]) {
+                    array.splice(i, 0, element);
+                    break;
+                }
+            }
+        }
+        array.splice(0, 1);
+    }
 
-    function* iteratePermutationsAux(model, word, letters) {
+    function* iteratePermutationsAux(model, word, letters, bestScores) {
         if (letters.length == 0) {
-            let score = null;
+            let score = 0;
             const suffixes = iterateSuffixes(word);
             while (true) {
                 const suffix = suffixes.next();
                 if (suffix.done) break;
                 const token = suffix.value;
                 const length = token.length;
+                if (length < MINIMUM_TOKEN_LENGTH && token != "^") continue;
                 if (!(token in model.tokens)) continue;
                 if (!("$" in model.tokens[token])) continue;
                 score = model.tokens[token]["$"] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
                 break;
             }
+            if (score == null) {
+                score = 0;
+            } else {
+                insertInSortedArray(bestScores, score);
+            }
             const result = {
                 word: word,
-                score: score == null ? 0 : score,
+                score: score,
             };
             yield result;
         } else {
@@ -162,6 +186,7 @@ window.addEventListener("load", () => {
                 if (suffix.done) break;
                 const token = suffix.value;
                 const length = token.length;
+                if (length < MINIMUM_TOKEN_LENGTH && !token.startsWith("^")) break;
                 if (!(token in model.tokens)) continue;
                 if (model.tokenOccurrences[token] < MINIMUM_TOKEN_OCCURRENCES) continue;
                 let nextLetterCandidates = new Set(Object.keys(model.tokens[token]));
@@ -169,8 +194,17 @@ window.addEventListener("load", () => {
                 nextLetterCandidates.sort((a, b) => model.tokens[token][b] - model.tokens[token][a]);
                 for (const letter of nextLetterCandidates) {
                     seen.add(letter);
+                    
+                    // Going down the tree, the score can only decrease.
+                    // Given that we're only keeping the top k results,
+                    // if the current score is below the k-th best score,
+                    // we can skip going further.
                     const score = model.tokens[token][letter] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
-                    const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter));
+                    // As the bestScores array is sorted in ascending order,
+                    // the first item is always the lowest best score.
+                    if (score < bestScores[0]) continue;
+                    
+                    const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores);
                     while (true) {
                         const continuation = continuations.next();
                         if (continuation.done) break;
@@ -186,8 +220,12 @@ window.addEventListener("load", () => {
         }
     }
 
-    function* iteratePermutations(model, query) {
-        const permutations = iteratePermutationsAux(model, "^", query.split(""));
+    function* iteratePermutations(model, query, k=10) {
+        const bestScores = [];
+        for (let i = 0; i < k; i++) {
+            bestScores.push(0);
+        }
+        const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores);
         while (true) {
             const permutation = permutations.next();
             if (permutation.done) break;
@@ -215,6 +253,11 @@ window.addEventListener("load", () => {
             permutations.push(item.value);
         }
         permutations.sort((a, b) => b.score - a.score);
+        if (timeout) {
+            console.log("Permutation computation for", query, "timed out after", timeoutSeconds, "seconds");
+        } else {
+            console.log("Computed permutations for", query, "finished in", (new Date() - timeStart) / 1000, "seconds");
+        }
         return {
             permutations: permutations.slice(0, k),
             timeout: timeout,
@@ -233,7 +276,7 @@ window.addEventListener("load", () => {
             firstnameCandidates = new Set();
         }
         for (const firstname of firstnameCandidates) {
-            if (query.startsWith(firstname)) continue;
+            //if (query.startsWith(firstname)) continue;
             const pool = [...query];
             let feasible = true;
             for (const letter of firstname) {
@@ -287,20 +330,14 @@ window.addEventListener("load", () => {
             const nicknames = findNicknames(model, query, {
                 male: true,
                 female: true,
-                k: 3,
-                q: 10,
+                k: 2,
+                q: 20,
                 timeout: 1
             });
             output.innerHTML = "";
             nicknames.forEach(nickname => {
                 output.innerHTML += `${capitalize(nickname.firstname)} ${capitalize(nickname.lastname)} (${nickname.score.toFixed(3)})\n`;
             });
-            // if (result.timeout) {
-            //     output.innerHTML += "Computation timed out. Results might be bad.\n";
-            // }
-            // result.permutations.forEach(permuation => {
-            //     output.innerHTML += `${permuation.word} (${permuation.score})\n`
-            // });
         }, 1);
     });
     
