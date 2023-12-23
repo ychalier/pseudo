@@ -4,6 +4,8 @@ window.addEventListener("load", () => {
         let w = new Worker("worker.js");
         w.onmessage = (event) => {
             if (event.data.status == "finished") {
+                document.getElementById("button-interrupt").disabled = true;
+                document.getElementById("button-generate").disabled = false;
                 if (event.data.success) {
                     const output = document.getElementById("pre-output");
                     output.innerHTML = "";
@@ -20,6 +22,8 @@ window.addEventListener("load", () => {
             } else if (event.data.status == "ongoing") {
                 const output = document.getElementById("pre-output");
                 output.innerHTML = `Génération… (${event.data.current}/${event.data.total})`;
+                document.getElementById("button-interrupt").disabled = false;
+                document.getElementById("button-generate").disabled = true;
             }
         }
         return w;
@@ -31,6 +35,8 @@ window.addEventListener("load", () => {
     document.getElementById("button-interrupt").addEventListener("click", (event) => {
         worker.terminate();
         document.getElementById("pre-output").innerHTML = "Interrompu";
+        document.getElementById("button-interrupt").disabled = true;
+        document.getElementById("button-generate").disabled = false;
         worker = createWorker();
     });
 
@@ -40,6 +46,7 @@ window.addEventListener("load", () => {
         const query = formData.get("query");
         const options = {
             k: parseInt(formData.get("k")),
+            minimumScore: parseFloat(formData.get("mins")),
             minimumTokenLength: parseInt(formData.get("minl")),
             minimumTokenOccurrences: parseInt(formData.get("mino")),
             prefix: formData.get("prefix") == "" ? null : formData.get("prefix"),
@@ -47,6 +54,8 @@ window.addEventListener("load", () => {
         }
         worker.postMessage([query, options]);
         document.getElementById("pre-output").innerHTML = "Génération…";
+        document.getElementById("button-interrupt").disabled = false;
+        document.getElementById("button-generate").disabled = true;
     });
     
 });

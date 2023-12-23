@@ -146,7 +146,7 @@ function insertInSortedArray(array, element) {
 }
 
 
-function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenLength, minimumTokenOccurrences) {
+function* iteratePermutationsAux(model, word, letters, bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
     if (interrupt) return;
     if (letters.length == 0) {
         let score = 0;
@@ -156,11 +156,15 @@ function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenL
             if (suffix.done) break;
             const token = suffix.value;
             const length = token.length;
-            if (length < minimumTokenLength && token != "^") continue;
+            if (length < minimumTokenLength && token.startsWith("^")) continue;
             if (!(token in model.tokens)) continue;
             if (!("$" in model.tokens[token])) continue;
             score = model.tokens[token]["$"] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
-            break;
+            if (score < minimumScore) {
+                score = null;
+            } else {
+                break;
+            }
         }
         if (score == null) {
             score = 0;
@@ -197,9 +201,9 @@ function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenL
                 const score = model.tokens[token][letter] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
                 // As the bestScores array is sorted in ascending order,
                 // the first item is always the lowest best score.
-                if (score < bestScores[0]) continue;
+                if (score < bestScores[0] || score < minimumScore) continue;
                 
-                const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores, minimumTokenLength, minimumTokenOccurrences);
+                const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences);
                 while (true) {
                     const continuation = continuations.next();
                     if (continuation.done) break;
@@ -216,12 +220,12 @@ function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenL
 }
 
 
-function* iteratePermutations(model, query, k, minimumTokenLength, minimumTokenOccurrences) {
+function* iteratePermutations(model, query, k, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
     const bestScores = [];
     for (let i = 0; i < k; i++) {
         bestScores.push(0);
     }
-    const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores, minimumTokenLength, minimumTokenOccurrences);
+    const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences);
     while (true) {
         const permutation = permutations.next();
         if (permutation.done) break;
@@ -234,8 +238,8 @@ function* iteratePermutations(model, query, k, minimumTokenLength, minimumTokenO
 }
 
 
-function computeTopPermutations(model, query, k, timeoutSeconds, minimumTokenLength, minimumTokenOccurrences) {
-    const iterator = iteratePermutations(model, query, k, minimumTokenLength, minimumTokenOccurrences);
+function computeTopPermutations(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
+    const iterator = iteratePermutations(model, query, k, minimumScore, minimumTokenLength, minimumTokenOccurrences);
     const permutations = [];
     const timeStart = new Date();
     let timeout = false;
@@ -321,6 +325,7 @@ onmessage = (event) => {
             prefix.pool.join(""),
             options.k,
             options.timeout,
+            options.minimumScore,
             options.minimumTokenLength,
             options.minimumTokenOccurrences);
         for (const permutation of topPermutationsResult.permutations) {

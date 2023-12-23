@@ -29,7 +29,7 @@
                 </select>
             </div>
             <div class="inline-form-item">
-                <input type="submit" value="Générer" />
+                <input type="submit" value="Générer" id="button-generate" />
             </div>
         </div>
         <details>
@@ -38,6 +38,10 @@
                 <div class="inline-form-item">
                     <label for="input-k">Nombre de résultats considérés</label>
                     <input id="input-k" type="number" name="k" placeholder="2" value="2" min="1"/>
+                </div>
+                <div class="inline-form-item">
+                    <label for="input-mins">Score minimum</label>
+                    <input id="input-mins" type="number" name="mins" required placeholder="0.1" value="0.1" min="0" step="0.001" />
                 </div>
                 <div class="inline-form-item">
                     <label for="input-minl">Taille minimale des <i>n-grammes</i></label>
@@ -55,7 +59,7 @@
         </details>
     </form>
     <h3>Résultat</h3>
-    <button id="button-interrupt">Interrompre</button>
+    <button id="button-interrupt" disabled>Interrompre</button>
     <pre id="pre-output">—</pre>
     <footer>
         Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a>
