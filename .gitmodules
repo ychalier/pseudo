@@ -1,0 +1,3 @@
+[submodule "www/zip.js"]
+	path = www/zip.js
+	url = https://github.com/gildas-lormeau/zip.js
