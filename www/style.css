@@ -1,0 +1,20 @@
+.inline-form {
+    display: flex;
+    flex-direction: row;
+    align-items: bottom;
+    margin-bottom: 16px;
+}
+
+.inline-form-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.inline-form-item + .inline-form-item {
+    margin-left: .4rem;
+}
+
+.inline-form-item-large {
+    width: 100%;
+}

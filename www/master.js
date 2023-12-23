@@ -12,14 +12,14 @@ window.addEventListener("load", () => {
                         output.innerHTML += `${result.string} (${result.score.toFixed(3)})\n`;
                     }
                 } else {
-                    output.innerHTML = "No result found ☹"
+                    output.innerHTML = "Aucun résultat"
                 }
             } else {
                 alert(event.data.error);
             }
         } else if (event.data.status == "ongoing") {
             const output = document.getElementById("pre-output");
-            output.innerHTML = `Computing… (${event.data.current}/${event.data.total})`;
+            output.innerHTML = `Génération… (${event.data.current}/${event.data.total})`;
         }
     }
 
@@ -35,7 +35,7 @@ window.addEventListener("load", () => {
             timeout: parseFloat(formData.get("timeout"))
         }
         worker.postMessage([query, options]);
-        document.getElementById("pre-output").innerHTML = "Computing…";
+        document.getElementById("pre-output").innerHTML = "Génération…";
     });
     
 });

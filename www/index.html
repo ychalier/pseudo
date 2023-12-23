@@ -5,53 +5,60 @@
 <head>
     <meta charset="utf8">
     <meta name="viewport" content="width=device-width" />
-    <!--<script src="zip.min.js"></script>-->
+    <title>Générateur de pseudonyme</title>
+    <link rel="stylesheet" href="style.css" />
     <script src="master.js"></script>
 </head>
 
 <body>
-    <h1>Pseudo</h1>
-    <h2>Generate permutations</h2>
+    <p>
+        Ce générateur produit des anagrammes prononçables.
+    </p>
     <form id="form-query">
-        <p>
-            <label for="input-query">Query</label>
-            <input id="input-query" type="text" required placeholder="Lorem" name="query" />
-            <span>Only ASCII letters will be considered </span>
-        </p>
-        <p>
-            <label for="input-k">Keep Top K Results</label>
-            <input id="input-k" type="number" name="k" placeholder="3" value="3" min="1"/>
-        </p>
-        <p>
-            <label for="input-minl">Minimum Token Length</label>
-            <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" />
-        </p>
-        <p>
-            <label for="input-mino">Minimum Token Occurrences</label>
-            <input id="input-mino" type="number" name="mino" required placeholder="1" value="1" min="0" />
-        </p>
-        <p>
-            <label for="select-prefix">Prefix</label>
-            <select id="select-prefix" name="prefix">
-                <option value="" selected>None</option>
-                <option value="firstnames">Firstnames</option>
-                <option value="streets">Streets</option>
-            </select>
-        </p>
-        <p>
-            <label for="input-timeout">Timeout (seconds)</label>
-            <input id="input-timeout" type="number" name="timeout" required placeholder="1" value="1" min="0" step="0.1" />
-        </p>
-        <p>
-            <input type="submit" value="Generate" />
-        </p>
+        <div class="inline-form">
+            <div class="inline-form-item inline-form-item-large">
+                <label for="input-query">Requête</label>
+                <input id="input-query" type="text" required placeholder="Lorem" name="query" />
+            </div>
+            <div class="inline-form-item">
+                <label for="select-prefix">Préfixe</label>
+                <select id="select-prefix" name="prefix">
+                    <option value="" selected>Aucun</option>
+                    <option value="firstnames">Prénom</option>
+                    <option value="streets">Voie</option>
+                </select>
+            </div>
+            <div class="inline-form-item">
+                <input type="submit" value="Générer" />
+            </div>
+        </div>
+        <details>
+            <summary>Options avancées</summary>
+            <div class="inline-form">
+                <div class="inline-form-item">
+                    <label for="input-k">Nombre de résultats considérés</label>
+                    <input id="input-k" type="number" name="k" placeholder="2" value="2" min="1"/>
+                </div>
+                <div class="inline-form-item">
+                    <label for="input-minl">Taille minimale des <i>n-grammes</i></label>
+                    <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" />
+                </div>
+                <div class="inline-form-item">
+                    <label for="input-mino">Occurrences minimum des <i>n-grammes</i></label>
+                    <input id="input-mino" type="number" name="mino" required placeholder="1" value="1" min="0" />
+                </div>
+                <div class="inline-form-item">
+                    <label for="input-timeout">Délais d'attente (en secondes)</label>
+                    <input id="input-timeout" type="number" name="timeout" required placeholder="1" value="1" min="0" step="0.1" />
+                </div>
+            </div>
+        </details>
     </form>
-    <h3>Output</h3>
+    <h3>Résultat</h3>
     <pre id="pre-output">—</pre>
-    <h2>Built With</h2>
-    <ul>
-        <li><a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a></li>
-    </ul>
+    <footer>
+        Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a>
+    </footer>
 </body>
 
 </html>
