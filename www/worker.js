@@ -1,4 +1,4 @@
-importScripts("zip.js/dist/zip.min.js");
+importScripts("zip.min.js");
 
 
 var model;
