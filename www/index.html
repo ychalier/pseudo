@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf8">
     <meta name="viewport" content="width=device-width" />
-    <script src="zip.min.js"></script>
+    <!--<script src="zip.min.js"></script>-->
     <script src="master.js"></script>
 </head>
 
@@ -16,6 +16,31 @@
         <p>
             <label for="input-query">Query</label>
             <input id="input-query" type="text" required placeholder="Lorem" name="query" />
+            <span>Only ASCII letters will be considered </span>
+        </p>
+        <p>
+            <label for="input-k">Keep Top K Results</label>
+            <input id="input-k" type="number" name="k" placeholder="3" value="3" min="1"/>
+        </p>
+        <p>
+            <label for="input-minl">Minimum Token Length</label>
+            <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" />
+        </p>
+        <p>
+            <label for="input-mino">Minimum Token Occurrences</label>
+            <input id="input-mino" type="number" name="mino" required placeholder="1" value="1" min="0" />
+        </p>
+        <p>
+            <label for="select-prefix">Prefix</label>
+            <select id="select-prefix" name="prefix">
+                <option value="" selected>None</option>
+                <option value="firstnames">Firstnames</option>
+                <option value="streets">Streets</option>
+            </select>
+        </p>
+        <p>
+            <label for="input-timeout">Timeout (seconds)</label>
+            <input id="input-timeout" type="number" name="timeout" required placeholder="1" value="1" min="0" step="0.1" />
         </p>
         <p>
             <input type="submit" value="Generate" />

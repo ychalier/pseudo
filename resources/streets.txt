@@ -1,0 +1,17 @@
+rue
+avenue
+impasse
+chemin
+route
+place
+passage
+boulevard
+cours
+allée
+ruelle
+jardin
+parc
+pont
+sentier
+square
+voie

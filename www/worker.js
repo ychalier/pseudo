@@ -1,23 +1,21 @@
 importScripts("zip.min.js");
 
-const MINIMUM_TOKEN_LENGTH = 2;
-const MINIMUM_TOKEN_OCCURRENCES = 1;
+
+var model;
+var prefixes;
+
 
 class Model {
 
-    constructor(tokens, maleFirstnames, femaleFirstnames) {
+    constructor(tokens) {
         this.tokens = tokens;
         this.tokenOccurrences = null;
         this.maximumPairOccurrences = null;
-        this.maleFirstnames = maleFirstnames;
-        this.femaleFirstnames = femaleFirstnames;
         this.preprocess();
         console.log(
             "Loaded model with",
             Object.keys(this.tokens).length,
-            "tokens and",
-            this.maleFirstnames.size + this.femaleFirstnames.size,
-            "firstnames");
+            "tokens");
     }
 
     preprocess() {
@@ -40,6 +38,12 @@ class Model {
 
 }
 
+
+function normalizeString(string) {
+    return string.toLocaleLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+}
+
+
 function loadModelTsv(tsvText) {
     const tokens = {};
     let lines = tsvText.replaceAll("\r", "").split("\n");
@@ -59,42 +63,38 @@ function loadModelTsv(tsvText) {
     return tokens;
 }
 
-function loadFirstnamesText(firstnamesText) {
-    const firstnames = new Set();
-    firstnamesText.trim().replaceAll("\r", "").split("\n").forEach(line => {
+
+function loadPrefixText(text) {
+    const prefixes = new Set();
+    text.trim().replaceAll("\r", "").split("\n").forEach(line => {
         if (line == "") return;
-        firstnames.add(line);
+        prefixes.add(normalizeString(line));
     });
-    return firstnames;
+    return prefixes;
 }
 
-function getZipEntry(zipEntries, filename) {
-    for (let i = 0; i < zipEntries.length; i++) {
-        if (zipEntries[i].filename == filename) {
-            return zipEntries[i];
-        }
-    }
-}
 
 function loadModelBlob(blob) {
     const zipFileReader = new zip.BlobReader(blob);
-    const tokenTsvWriter = new zip.TextWriter();
-    const maleFirstnamesTextWriter = new zip.TextWriter();
-    const femaleFirstnamesTextWriter = new zip.TextWriter();
     const zipReader = new zip.ZipReader(zipFileReader);
     zipReader.getEntries().then(zipEntries => {
-        getZipEntry(zipEntries, "tokens.tsv").getData(tokenTsvWriter).then(tsvText => {
-            const tokens = loadModelTsv(tsvText);
-            getZipEntry(zipEntries, "male.txt").getData(maleFirstnamesTextWriter).then(maleFirstnamesText => {
-                const maleFirstnames = loadFirstnamesText(maleFirstnamesText);
-                getZipEntry(zipEntries, "female.txt").getData(femaleFirstnamesTextWriter).then(femaleFirstnamesText => {
-                    const femaleFirstnames = loadFirstnamesText(femaleFirstnamesText);
-                    model = new Model(tokens, maleFirstnames, femaleFirstnames);
+        prefixes = {};
+        for (const entry of zipEntries) {
+            if (entry.filename == "tokens.tsv") {
+                const tsvWriter = new zip.TextWriter();
+                entry.getData(tsvWriter).then(tsvText => {
+                    model = new Model(loadModelTsv(tsvText));
                 });
-            });
-        });
+            } else {
+                const textWriter = new zip.TextWriter();
+                entry.getData(textWriter).then(text => {
+                    prefixes[entry.filename.replace(".txt", "")] = loadPrefixText(text);
+                });
+            }
+        }
     });
 }
+
 
 function loadModel() {
     fetch("model.zip").then(res => res.blob()).then(blob => {
@@ -102,14 +102,6 @@ function loadModel() {
     });
 }
 
-function alertAndThrowError(errorMessage) {
-    alert("Error: " + errorMessage);
-    throw new Error(errorMessage);
-}
-
-function preprocessQuery(query) {
-    return query.toLocaleLowerCase().trim().replace(/[^a-z]/, "");
-}
 
 function* iterateSuffixes(string) {
     for (let i = 0; i < string.length; i++) {
@@ -117,19 +109,23 @@ function* iterateSuffixes(string) {
     }
 }
 
+
 function copyArrayWithout(array, element) {
     const copy = [...array];
     copy.splice(copy.indexOf(element), 1);
     return copy;
 }
 
+
 function setsIntersection(a, b) {
     return new Set([...a].filter(i => b.has(i)));
 }
 
+
 function setsDifference(a, b) {
     return new Set([...a].filter(i => !b.has(i)));
 }
+
 
 /**
  * Insert an element in a fixed size array, sorted in ascending order.
@@ -148,7 +144,8 @@ function insertInSortedArray(array, element) {
     array.splice(0, 1);
 }
 
-function* iteratePermutationsAux(model, word, letters, bestScores) {
+
+function* iteratePermutationsAux(model, word, letters, bestScores, minimumTokenLength, minimumTokenOccurrences) {
     if (letters.length == 0) {
         let score = 0;
         const suffixes = iterateSuffixes(word);
@@ -157,7 +154,7 @@ function* iteratePermutationsAux(model, word, letters, bestScores) {
             if (suffix.done) break;
             const token = suffix.value;
             const length = token.length;
-            if (length < MINIMUM_TOKEN_LENGTH && token != "^") continue;
+            if (length < minimumTokenLength && token != "^") continue;
             if (!(token in model.tokens)) continue;
             if (!("$" in model.tokens[token])) continue;
             score = model.tokens[token]["$"] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
@@ -182,9 +179,9 @@ function* iteratePermutationsAux(model, word, letters, bestScores) {
             if (suffix.done) break;
             const token = suffix.value;
             const length = token.length;
-            if (length < MINIMUM_TOKEN_LENGTH && !token.startsWith("^")) break;
+            if (length < minimumTokenLength && !token.startsWith("^")) break;
             if (!(token in model.tokens)) continue;
-            if (model.tokenOccurrences[token] < MINIMUM_TOKEN_OCCURRENCES) continue;
+            if (model.tokenOccurrences[token] < minimumTokenOccurrences) continue;
             let nextLetterCandidates = new Set(Object.keys(model.tokens[token]));
             nextLetterCandidates = [...setsDifference(setsIntersection(nextLetterCandidates, lettersSet), seen)];
             nextLetterCandidates.sort((a, b) => model.tokens[token][b] - model.tokens[token][a]);
@@ -200,7 +197,7 @@ function* iteratePermutationsAux(model, word, letters, bestScores) {
                 // the first item is always the lowest best score.
                 if (score < bestScores[0]) continue;
                 
-                const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores);
+                const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores, minimumTokenLength, minimumTokenOccurrences);
                 while (true) {
                     const continuation = continuations.next();
                     if (continuation.done) break;
@@ -216,12 +213,13 @@ function* iteratePermutationsAux(model, word, letters, bestScores) {
     }
 }
 
-function* iteratePermutations(model, query, k=10) {
+
+function* iteratePermutations(model, query, k, minimumTokenLength, minimumTokenOccurrences) {
     const bestScores = [];
     for (let i = 0; i < k; i++) {
         bestScores.push(0);
     }
-    const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores);
+    const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores, minimumTokenLength, minimumTokenOccurrences);
     while (true) {
         const permutation = permutations.next();
         if (permutation.done) break;
@@ -233,8 +231,9 @@ function* iteratePermutations(model, query, k=10) {
     }
 }
 
-function computeTopPermutations(model, query, k=10, timeoutSeconds=5) {
-    const iterator = iteratePermutations(model, query);
+
+function computeTopPermutations(model, query, k, timeoutSeconds, minimumTokenLength, minimumTokenOccurrences) {
+    const iterator = iteratePermutations(model, query, k, minimumTokenLength, minimumTokenOccurrences);
     const permutations = [];
     const timeStart = new Date();
     let timeout = false;
@@ -260,60 +259,46 @@ function computeTopPermutations(model, query, k=10, timeoutSeconds=5) {
     }
 }
 
-function* iterateFirstnames(model, query, male=true, female=true) {
-    let firstnameCandidates = null;
-    if (male && female) {
-        firstnameCandidates = new Set([...model.maleFirstnames, ...model.femaleFirstnames]);
-    } else if (male) {
-        firstnameCandidates = new Set([...model.maleFirstnames]);
-    } else if (female) {
-        firstnameCandidates = new Set([...model.femaleFirstnames]);
-    } else {
-        firstnameCandidates = new Set();
-    }
-    for (const firstname of firstnameCandidates) {
-        //if (query.startsWith(firstname)) continue;
-        const pool = [...query];
-        let feasible = true;
-        for (const letter of firstname) {
-            const letterIndex = pool.indexOf(letter);
-            if (letterIndex == -1) {
-                feasible = false;
-                break;
-            }
-            pool.splice(letterIndex, 1);
-        }
-        if (!feasible) continue;
+
+function* iteratePrefixes(query, prefix_set_name) {
+    if (prefix_set_name == null) {
         const result = {
-            firstname: firstname,
-            pool: pool,
+            prefix: null,
+            pool: query.split(""),
         }
         yield result;
-    }
-}
-
-function findNicknames(model, query, options) {
-    const iterator = iterateFirstnames(model, query, options.male, options.female);
-    const results = [];
-    while (true) {
-        const item = iterator.next();
-        if (item.done) break;
-        const topPermutationsResult = computeTopPermutations(model, item.value.pool.join(""), options.k, options.timeout);
-        for (const permutation of topPermutationsResult.permutations) {
-            results.push({
-                firstname: item.value.firstname,
-                lastname: permutation.word,
-                score: permutation.score,
-            });
+    } else {
+        const prefix_set = prefixes[prefix_set_name];
+        for (const prefix of prefix_set) {
+            //if (query.startsWith(firstname)) continue;
+            const pool = [...query];
+            let feasible = true;
+            for (const letter of prefix) {
+                const letterIndex = pool.indexOf(letter);
+                if (letterIndex == -1) {
+                    feasible = false;
+                    break;
+                }
+                pool.splice(letterIndex, 1);
+            }
+            if (!feasible) continue;
+            const result = {
+                prefix: prefix,
+                pool: pool,
+            }
+            yield result;
         }
     }
-    results.sort((a, b) => b.score - a.score);
-    return results.slice(0, options.q);
 }
 
 
-var model;
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+
 loadModel();
+
 
 onmessage = (event) => {
     if (model == null) {
@@ -322,18 +307,41 @@ onmessage = (event) => {
             success: false,
             error: "Model has not loaded"});
         return;
-    } 
-    const query = preprocessQuery(event.data[0]);
-    const nicknames = findNicknames(model, query, {
-        male: true,
-        female: true,
-        k: 2,
-        q: 20,
-        timeout: 1
-    });
+    }
+    const query = normalizeString(event.data[0]);
+    const options = event.data[1];
+    console.log("Calling worker for query", query, "with options", options);
+    const iterator = iteratePrefixes(query, options.prefix);
+    const results = [];
+    let i = 0;
+    const total = options.prefix == null ? 1 : prefixes[options.prefix].size;
+    while (true) {
+        const item = iterator.next();
+        if (item.done) break;
+        const topPermutationsResult = computeTopPermutations(
+            model,
+            item.value.pool.join(""),
+            options.k,
+            options.timeout,
+            options.minimumTokenLength,
+            options.minimumTokenOccurrences);
+        for (const permutation of topPermutationsResult.permutations) {
+            results.push({
+                string: item.value.prefix == null ? capitalize(permutation.word) : `${capitalize(item.value.prefix)} ${capitalize(permutation.word)}`,
+                score: permutation.score,
+            });
+        }
+        i++;
+        postMessage({
+            status: "ongoing",
+            current: i,
+            total: total,
+        });
+    }
+    results.sort((a, b) => b.score - a.score);
     postMessage({
         status: "finished",
         success: true,
-        result: nicknames,
+        result: results,
     });
 }
