@@ -2,7 +2,7 @@ importScripts("zip.min.js");
 
 
 var model;
-var prefixes;
+var prefixSets;
 
 
 class Model {
@@ -78,7 +78,7 @@ function loadModelBlob(blob) {
     const zipFileReader = new zip.BlobReader(blob);
     const zipReader = new zip.ZipReader(zipFileReader);
     zipReader.getEntries().then(zipEntries => {
-        prefixes = {};
+        prefixSets = {};
         for (const entry of zipEntries) {
             if (entry.filename == "tokens.tsv") {
                 const tsvWriter = new zip.TextWriter();
@@ -88,7 +88,7 @@ function loadModelBlob(blob) {
             } else {
                 const textWriter = new zip.TextWriter();
                 entry.getData(textWriter).then(text => {
-                    prefixes[entry.filename.replace(".txt", "")] = loadPrefixText(text);
+                    prefixSets[entry.filename.replace(".txt", "")] = loadPrefixText(text);
                 });
             }
         }
@@ -260,17 +260,16 @@ function computeTopPermutations(model, query, k, timeoutSeconds, minimumTokenLen
 }
 
 
-function* iteratePrefixes(query, prefix_set_name) {
-    if (prefix_set_name == null) {
-        const result = {
+function listPrefixes(query, prefixSetName) {
+    const prefixes = [];
+    if (prefixSetName == null) {
+        prefixes.push({
             prefix: null,
             pool: query.split(""),
-        }
-        yield result;
+        })
     } else {
-        const prefix_set = prefixes[prefix_set_name];
+        const prefix_set = prefixSets[prefixSetName];
         for (const prefix of prefix_set) {
-            //if (query.startsWith(firstname)) continue;
             const pool = [...query];
             let feasible = true;
             for (const letter of prefix) {
@@ -282,13 +281,13 @@ function* iteratePrefixes(query, prefix_set_name) {
                 pool.splice(letterIndex, 1);
             }
             if (!feasible) continue;
-            const result = {
+            prefixes.push({
                 prefix: prefix,
                 pool: pool,
-            }
-            yield result;
+            });
         }
     }
+    return prefixes;
 }
 
 
@@ -311,23 +310,20 @@ onmessage = (event) => {
     const query = normalizeString(event.data[0]);
     const options = event.data[1];
     console.log("Calling worker for query", query, "with options", options);
-    const iterator = iteratePrefixes(query, options.prefix);
+    const prefixes = listPrefixes(query, options.prefix);
     const results = [];
     let i = 0;
-    const total = options.prefix == null ? 1 : prefixes[options.prefix].size;
-    while (true) {
-        const item = iterator.next();
-        if (item.done) break;
+    for (const prefix of prefixes) {
         const topPermutationsResult = computeTopPermutations(
             model,
-            item.value.pool.join(""),
+            prefix.pool.join(""),
             options.k,
             options.timeout,
             options.minimumTokenLength,
             options.minimumTokenOccurrences);
         for (const permutation of topPermutationsResult.permutations) {
             results.push({
-                string: item.value.prefix == null ? capitalize(permutation.word) : `${capitalize(item.value.prefix)} ${capitalize(permutation.word)}`,
+                string: prefix.prefix == null ? capitalize(permutation.word) : `${capitalize(prefix.prefix)} ${capitalize(permutation.word)}`,
                 score: permutation.score,
             });
         }
@@ -335,7 +331,7 @@ onmessage = (event) => {
         postMessage({
             status: "ongoing",
             current: i,
-            total: total,
+            total: prefixes.length,
         });
     }
     results.sort((a, b) => b.score - a.score);
