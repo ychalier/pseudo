@@ -1,0 +1,1 @@
+zip $PSScriptRoot\..\www\model.zip $PSScriptRoot\tokens.tsv $PSScriptRoot\firstnames.txt $PSScriptRoot\streets.txt

@@ -128,7 +128,4 @@ dmypy.json
 # Database
 db.sqlite3
 
-*.json
-*.zip
 ignore/
-*.tsv
