@@ -4,24 +4,33 @@ window.addEventListener("load", () => {
         let w = new Worker("worker.js");
         w.onmessage = (event) => {
             if (event.data.status == "finished") {
+                document.getElementById("progress-container").classList.add("hidden");
                 document.getElementById("button-interrupt").disabled = true;
                 document.getElementById("button-generate").disabled = false;
                 if (event.data.success) {
-                    const output = document.getElementById("pre-output");
+                    const output = document.getElementById("output");
                     output.innerHTML = "";
                     if (event.data.result.length > 0) {
                         for (const result of event.data.result) {
-                            output.innerHTML += `${result.string} (${result.score.toFixed(3)})\n`;
+                            const resultElement = output.appendChild(document.createElement("div"));
+                            resultElement.textContent = `${result.string} (${result.score.toFixed(3)})`;
                         }
                     } else {
-                        output.innerHTML = "Aucun résultat"
+                        output.innerHTML = "Aucun résultat";
                     }
                 } else {
                     alert(event.data.error);
                 }
             } else if (event.data.status == "ongoing") {
-                const output = document.getElementById("pre-output");
-                output.innerHTML = `Génération… (${event.data.current}/${event.data.total})`;
+                const output = document.getElementById("progress-status");
+                if (event.data.current < event.data.total) {
+                    output.innerHTML = `Génération… (${event.data.current}/${event.data.total})`;
+                } else {
+                    output.innerHTML = `Génération terminée (${event.data.current}/${event.data.total})`;
+                }
+                const progress = document.getElementById("progress");
+                progress.value = event.data.current;
+                progress.max = event.data.total;
                 document.getElementById("button-interrupt").disabled = false;
                 document.getElementById("button-generate").disabled = true;
             }
@@ -34,7 +43,7 @@ window.addEventListener("load", () => {
     
     document.getElementById("button-interrupt").addEventListener("click", (event) => {
         worker.terminate();
-        document.getElementById("pre-output").innerHTML = "Interrompu";
+        document.getElementById("progress-status").innerHTML = "Interrompu";
         document.getElementById("button-interrupt").disabled = true;
         document.getElementById("button-generate").disabled = false;
         worker = createWorker();
@@ -48,14 +57,16 @@ window.addEventListener("load", () => {
             k: parseInt(formData.get("k")),
             minimumScore: parseFloat(formData.get("mins")),
             minimumTokenLength: parseInt(formData.get("minl")),
-            minimumTokenOccurrences: parseInt(formData.get("mino")),
+            minimumTokenOccurrences: 0, //parseInt(formData.get("mino")),
             prefix: formData.get("prefix") == "" ? null : formData.get("prefix"),
             timeout: parseFloat(formData.get("timeout"))
         }
         worker.postMessage([query, options]);
-        document.getElementById("pre-output").innerHTML = "Génération…";
+        document.getElementById("output").innerHTML = "";
+        document.getElementById("progress-status").innerHTML = "Génération…";
         document.getElementById("button-interrupt").disabled = false;
         document.getElementById("button-generate").disabled = true;
+        document.getElementById("progress-container").classList.remove("hidden");
     });
     
 });

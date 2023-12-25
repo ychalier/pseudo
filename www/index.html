@@ -5,65 +5,75 @@
 <head>
     <meta charset="utf8">
     <meta name="viewport" content="width=device-width" />
-    <title>Générateur de pseudonyme</title>
+    <title>Pseudonyme en anagramme</title>
     <link rel="stylesheet" href="style.css" />
     <script src="master.js"></script>
 </head>
 
 <body>
-    <p>
-        Ce générateur produit des anagrammes prononçables.
-    </p>
-    <form id="form-query">
-        <div class="inline-form">
-            <div class="inline-form-item inline-form-item-large">
-                <label for="input-query">Requête</label>
-                <input id="input-query" type="text" required placeholder="Lorem" name="query" />
+    <div id="content">
+        <header>
+            <h1>Pseudonyme en anagramme</h1>
+        
+            <form id="form-query">
+                <div class="inline-form">
+                    <div class="inline-form-item inline-form-item-large">
+                        <label for="input-query">Requête</label>
+                        <input id="input-query" type="text" required placeholder="Jean Dupont" name="query" autofocus />
+                    </div>
+                    <div class="inline-form-item">
+                        <label for="select-prefix">Préfixe</label>
+                        <select id="select-prefix" name="prefix">
+                            <option value="" selected>Aucun</option>
+                            <option value="firstnames">Prénom</option>
+                            <option value="streets">Voie</option>
+                        </select>
+                    </div>
+                    <div class="inline-form-item">
+                        <input type="submit" value="Générer" id="button-generate" />
+                    </div>
+                </div>
+                <details>
+                    <summary>Options avancées</summary>
+                    <div class="inline-form inline-form-wrap">
+                        <div class="inline-form-item" title="Nombre de résultats considérés par préfixe">
+                            <label for="input-k">Résultats</label>
+                            <input id="input-k" type="number" name="k" placeholder="2" value="2" min="1" size="7"/>
+                        </div>
+                        <div class="inline-form-item" title="Score minimal des résultats">
+                            <label for="input-mins">Score min.</label>
+                            <input id="input-mins" type="number" name="mins" required placeholder="0.1" value="0" min="0" step="0.001" size="7" />
+                        </div>
+                        <div class="inline-form-item" title="Taille minimale des n-grammes">
+                            <label for="input-minl">Taille min.</label>
+                            <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" size="7" />
+                        </div>
+                        <!--
+                        <div class="inline-form-item">
+                            <label for="input-mino">Occurrences minimum des <i>n-grammes</i></label>
+                            <input id="input-mino" type="number" name="mino" required placeholder="0" value="0" min="0" />
+                        </div>
+                        -->
+                        <div class="inline-form-item" title="Délais d'attente en secondes">
+                            <label for="input-timeout">Délais</label>
+                            <input id="input-timeout" type="number" name="timeout" required placeholder="1" value="1" min="0" step="0.1" size="7" />
+                        </div>
+                    </div>
+                </details>
+            </form>
+        </header>
+        <section id="main-section">
+            <div id="progress-container" class="hidden">
+                <button id="button-interrupt" disabled>Interrompre</button>
+                <span id="progress-status"></span>
+                <progress id="progress" max="100" min="0" value="0"></progress>
             </div>
-            <div class="inline-form-item">
-                <label for="select-prefix">Préfixe</label>
-                <select id="select-prefix" name="prefix">
-                    <option value="" selected>Aucun</option>
-                    <option value="firstnames">Prénom</option>
-                    <option value="streets">Voie</option>
-                </select>
-            </div>
-            <div class="inline-form-item">
-                <input type="submit" value="Générer" id="button-generate" />
-            </div>
-        </div>
-        <details>
-            <summary>Options avancées</summary>
-            <div class="inline-form">
-                <div class="inline-form-item">
-                    <label for="input-k">Nombre de résultats considérés</label>
-                    <input id="input-k" type="number" name="k" placeholder="2" value="2" min="1"/>
-                </div>
-                <div class="inline-form-item">
-                    <label for="input-mins">Score minimum</label>
-                    <input id="input-mins" type="number" name="mins" required placeholder="0.1" value="0.1" min="0" step="0.001" />
-                </div>
-                <div class="inline-form-item">
-                    <label for="input-minl">Taille minimale des <i>n-grammes</i></label>
-                    <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" />
-                </div>
-                <div class="inline-form-item">
-                    <label for="input-mino">Occurrences minimum des <i>n-grammes</i></label>
-                    <input id="input-mino" type="number" name="mino" required placeholder="1" value="1" min="0" />
-                </div>
-                <div class="inline-form-item">
-                    <label for="input-timeout">Délais d'attente (en secondes)</label>
-                    <input id="input-timeout" type="number" name="timeout" required placeholder="1" value="1" min="0" step="0.1" />
-                </div>
-            </div>
-        </details>
-    </form>
-    <h3>Résultat</h3>
-    <button id="button-interrupt" disabled>Interrompre</button>
-    <pre id="pre-output">—</pre>
-    <footer>
-        Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a>
-    </footer>
+            <div id="output"></div>
+        </section>
+        <footer>
+            Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a>
+        </footer>
+    </div>
 </body>
 
 </html>
