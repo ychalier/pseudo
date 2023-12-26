@@ -320,7 +320,8 @@ onmessage = (event) => {
             .computeTopPermutations();
         for (const permutation of topPermutationsResult) {
             results.push({
-                string: prefix.prefix == null ? capitalize(permutation.word) : `${capitalize(prefix.prefix)} ${capitalize(permutation.word)}`,
+                prefix: prefix.prefix == null ? null : capitalize(prefix.prefix),
+                word: capitalize(permutation.word),
                 score: permutation.score,
                 details: permutation.details,
             });

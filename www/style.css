@@ -152,7 +152,67 @@ details summary {
     display: none;
 }
 
-#output > * {
-    font-family: 'Courier New', Courier, monospace;
+.result {
     margin-bottom: .2rem;
+}
+
+.prefix,
+.letter,
+.letter-text,
+.score {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.letter {
+    position: relative;
+}
+
+.letter-text {
+    position: relative;
+    z-index: 2;
+}
+
+.letter-1:hover::before,
+.letter-2:hover::before,
+.letter-3:hover::before,
+.letter-4:hover::before {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid #d2d0f6;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.result:hover .letter-lowest {
+    background:  #ff000080;
+}
+
+.result:hover .letter-highest {
+    background: #00ff0080;
+}
+
+.letter:hover::after {
+    position: absolute;
+    content: " ";
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid #8d8ca6;
+    z-index: 1;
+}
+
+.letter-1:hover::before {
+    content: "  ";
+}
+
+.letter-2:hover::before {
+    content: "   ";
+}
+
+.letter-3:hover::before {
+    content: "    ";
+}
+
+.letter-4:hover::before {
+    content: "     ";
 }

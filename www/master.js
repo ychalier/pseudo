@@ -13,7 +13,46 @@ window.addEventListener("load", () => {
                     if (event.data.result.length > 0) {
                         for (const result of event.data.result) {
                             const resultElement = output.appendChild(document.createElement("div"));
-                            resultElement.textContent = `${result.string} (${result.score.toFixed(3)})`;
+                            resultElement.classList.add("result");
+                            if (result.prefix != null) {
+                                const prefixElement = resultElement.appendChild(document.createElement("span"));
+                                prefixElement.classList.add("prefix");
+                                prefixElement.textContent = result.prefix + " ";
+                            }
+                            const wordElement = resultElement.appendChild(document.createElement("span"));
+                            wordElement.classList.add("word");
+                            let lowestScore = null;
+                            let highestScore = null;
+                            for (let detail of result.details) {
+                                if (lowestScore == null || detail.score < lowestScore) {
+                                    lowestScore = detail.score;
+                                }
+                                if (highestScore == null || detail.score > highestScore) {
+                                    highestScore = detail.score;
+                                }
+                            }
+                            for (let i = 0; i <= result.word.length; i++) {
+                                const letterElement = wordElement.appendChild(document.createElement("span"));
+                                letterElement.classList.add("letter");
+                                if (result.details[i].score == lowestScore) {
+                                    letterElement.classList.add("letter-lowest");
+                                }
+                                if (result.details[i].score == highestScore) {
+                                    letterElement.classList.add("letter-highest");
+                                }
+                                const letterTextElement = letterElement.appendChild(document.createElement("span"));
+                                letterTextElement.classList.add("letter-text");
+                                if (i == result.word.length) {
+                                    letterTextElement.textContent = " ";
+                                } else {
+                                    letterTextElement.textContent = result.word.charAt(i);
+                                }
+                                letterElement.title = result.details[i].score.toFixed(3);
+                                letterElement.classList.add(`letter-${result.details[i].token.length}`);
+                            }
+                            const scoreElement = resultElement.appendChild(document.createElement("span"));
+                            scoreElement.classList.add("score");
+                            scoreElement.textContent = `(${result.score.toFixed(3)})`;
                         }
                     } else {
                         output.innerHTML = "Aucun résultat";
