@@ -48,6 +48,14 @@
                             <label for="input-minl">Taille min.</label>
                             <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" size="7" />
                         </div>
+                        <div class="inline-form-item" title="Atténuation des hautes fréquences">
+                            <label for="input-attenuation">Atténuation</label>
+                            <input id="input-attenuation" type="number" name="attenuation" required placeholder="0.5" value="0.5" min="0" max="1" step="0.01" size="7" />
+                        </div>
+                        <div class="inline-form-item" title="Définir le score selon la lettre la plus faible (plus rapide)">
+                            <label for="input-minimax">Minimax</label>
+                            <input id="input-minimax" type="checkbox" name="minimax" checked size="7" />
+                        </div>
                         <!--
                         <div class="inline-form-item">
                             <label for="input-mino">Occurrences minimum des <i>n-grammes</i></label>

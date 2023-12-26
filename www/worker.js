@@ -3,7 +3,6 @@ importScripts("zip.min.js");
 
 var model;
 var prefixSets;
-var interrupt = false;
 
 
 class Model {
@@ -35,6 +34,10 @@ class Model {
                     this.tokens[token][letter]);
             }
         }
+    }
+
+    score(token, letter) {
+        return this.tokens[token][letter] / this.tokenOccurrences[token];
     }
 
 }
@@ -104,13 +107,6 @@ function loadModel() {
 }
 
 
-function* iterateSuffixes(string) {
-    for (let i = 0; i < string.length; i++) {
-        yield string.slice(i);
-    }
-}
-
-
 function copyArrayWithout(array, element) {
     const copy = [...array];
     copy.splice(copy.indexOf(element), 1);
@@ -128,141 +124,132 @@ function setsDifference(a, b) {
 }
 
 
-/**
- * Insert an element in a fixed size array, sorted in ascending order.
- */
-function insertInSortedArray(array, element) {
-    if (element > array[array.length - 1]) {
-        array.push(element);
-    } else {
-        for (let i = 0; i < array.length; i++) {
-            if (element < array[i]) {
-                array.splice(i, 0, element);
-                break;
-            }
-        }
+class PermutationGenerator {
+
+    constructor(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences, attenuation, scoringStrategyMinimax) {
+        this.model = model;
+        this.query = query;
+        this.k = k;
+        this.timeoutSeconds = timeoutSeconds;
+        this.minimumScore = minimumScore;
+        this.minimumTokenLength = minimumTokenLength;
+        this.minimumTokenOccurrences = minimumTokenOccurrences;
+        this.attenuation = attenuation;
+        this.scoringStrategyMinimax = scoringStrategyMinimax;
+        this.timeStart = null;
+        this.bestScores = null;
     }
-    array.splice(0, 1);
-}
 
+    timedOut() {
+        return (new Date() - this.timeStart) > this.timeoutSeconds * 1000;
+    }
 
-function* iteratePermutationsAux(model, word, letters, bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
-    if (interrupt) return;
-    if (letters.length == 0) {
-        let score = 0;
-        const suffixes = iterateSuffixes(word);
-        while (true) {
-            const suffix = suffixes.next();
-            if (suffix.done) break;
-            const token = suffix.value;
-            const length = token.length;
-            if (length < minimumTokenLength && token.startsWith("^")) continue;
-            if (!(token in model.tokens)) continue;
-            if (!("$" in model.tokens[token])) continue;
-            score = model.tokens[token]["$"] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
-            if (score < minimumScore) {
-                score = null;
-            } else {
-                break;
+    insertScore(score) {
+        if (score > this.bestScores[this.bestScores.length - 1]) {
+            this.bestScores.push(score);
+        } else {
+            for (let i = 0; i < this.bestScores.length; i++) {
+                if (score <= this.bestScores[i]) {
+                    this.bestScores.splice(i, 0, score);
+                    break;
+                }
             }
         }
-        if (score == null) {
-            score = 0;
-        } else {
-            insertInSortedArray(bestScores, score);
+        this.bestScores.splice(0, 1);
+    }
+
+    findLongestSuffix(word, letter) {
+        for (let i = 0; i < word.length; i++) {
+            const suffix = word.slice(i);
+            if (!(suffix in this.model.tokens)) continue;
+            if (!(letter in this.model.tokens[suffix])) continue;
+            return suffix;
         }
-        const result = {
-            word: word,
-            score: score,
-        };
-        yield result;
-    } else {
-        const seen = new Set();
-        const lettersSet = new Set(letters);
-        const suffixes = iterateSuffixes(word);
-        while (true) {
-            const suffix = suffixes.next();
-            if (suffix.done) break;
-            const token = suffix.value;
+        return null;
+    }
+
+    *iteratePermutationsAux(word, letters) {
+        let isOver = false;
+        if (letters.length == 0) {
+            letters = ["$"];
+            isOver = true;
+        }
+        for (const letter of new Set(letters)) {
+            if (this.timedOut()) break;
+            const token = this.findLongestSuffix(word, letter);
+            if (token == null) continue;
             const length = token.length;
-            if (length < minimumTokenLength && !token.startsWith("^")) break;
-            if (!(token in model.tokens)) continue;
-            if (model.tokenOccurrences[token] < minimumTokenOccurrences) continue;
-            let nextLetterCandidates = new Set(Object.keys(model.tokens[token]));
-            nextLetterCandidates = [...setsDifference(setsIntersection(nextLetterCandidates, lettersSet), seen)];
-            nextLetterCandidates.sort((a, b) => model.tokens[token][b] - model.tokens[token][a]);
-            for (const letter of nextLetterCandidates) {
-                seen.add(letter);
-                
-                // Going down the tree, the score can only decrease.
-                // Given that we're only keeping the top k results,
-                // if the current score is below the k-th best score,
-                // we can skip going further.
-                const score = model.tokens[token][letter] / model.maximumPairOccurrences[length] * Math.pow(10, length - 1);
-                // As the bestScores array is sorted in ascending order,
-                // the first item is always the lowest best score.
-                if (score < bestScores[0] || score < minimumScore) continue;
-                
-                const continuations = iteratePermutationsAux(model, word + letter, copyArrayWithout(letters, letter), bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences);
-                while (true) {
+            if (length < this.minimumTokenLength && !token.startsWith("^")) continue;
+            if (this.model.tokenOccurrences[token] < this.minimumTokenOccurrences) continue;
+            const score = Math.pow(this.model.score(token, letter), 1 - this.attenuation);
+            if (score < this.minimumScore) continue;
+            if (this.scoringStrategyMinimax && score < this.bestScores[0]) continue;
+            const currentDetails = {
+                token: token,
+                letter: letter,
+                score: score,
+            }
+            if (isOver) {
+                const result = {
+                    word: word,
+                    score: score,
+                    details: [currentDetails],
+                };
+                yield result;
+            } else {
+                const continuations = this.iteratePermutationsAux(word + letter, copyArrayWithout(letters, letter));
+                while (!this.timedOut()) {
                     const continuation = continuations.next();
                     if (continuation.done) break;
                     if (continuation.value.score == 0) continue;
                     const result = {
                         word: continuation.value.word,
-                        score: Math.min(score, continuation.value.score),
+                        score: this.scoringStrategyMinimax ? Math.min(score, continuation.value.score) : score + continuation.value.score,
+                        details: [currentDetails, ...continuation.value.details],
                     };
                     yield result;
                 }
-            };
+            }
         }
     }
-}
 
-
-function* iteratePermutations(model, query, k, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
-    const bestScores = [];
-    for (let i = 0; i < k; i++) {
-        bestScores.push(0);
-    }
-    const permutations = iteratePermutationsAux(model, "^", query.split(""), bestScores, minimumScore, minimumTokenLength, minimumTokenOccurrences);
-    while (true) {
-        const permutation = permutations.next();
-        if (permutation.done) break;
-        const result = {
-            word: permutation.value.word.slice(1),
-            score: permutation.value.score,
+    *iteratePermutations() {
+        this.bestScores = [];
+        for (let i = 0; i < this.k; i++) {
+            this.bestScores.push(0);
         }
-        yield result;
-    }
-}
-
-
-function computeTopPermutations(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
-    const iterator = iteratePermutations(model, query, k, minimumScore, minimumTokenLength, minimumTokenOccurrences);
-    const permutations = [];
-    const timeStart = new Date();
-    let timeout = false;
-    while (true) {
-        const elapsedMillis = (new Date() - timeStart);
-        if (elapsedMillis > timeoutSeconds * 1000) {
-            timeout = true;
-            break;
+        const permutations = this.iteratePermutationsAux("^", this.query.split(""));
+        while (true) {
+            const permutation = permutations.next();
+            if (permutation.done) break;
+            this.insertScore(permutation.value.score);
+            const result = {
+                word: permutation.value.word.slice(1),
+                score: this.scoringStrategyMinimax ? permutation.value.score : permutation.value.score / this.query.length,
+                details: permutation.value.details,
+            }
+            yield result;
         }
-        const item = iterator.next();
-        if (item.done) break;
-        permutations.push(item.value);
     }
-    permutations.sort((a, b) => b.score - a.score);
-    if (timeout) {
-        console.log("Permutation computation for", query, "timed out after", timeoutSeconds, "seconds");
-    } else {
-        console.log("Computed permutations for", query, "finished in", (new Date() - timeStart) / 1000, "seconds");
+
+    computeTopPermutations() {
+        const iterator = this.iteratePermutations();
+        const permutations = [];
+        this.timeStart = new Date();
+        while (!this.timedOut()) {
+            const item = iterator.next();
+            if (item.done) break;
+            permutations.push(item.value);
+        }
+        permutations.sort((a, b) => b.score - a.score);
+        if (this.timedOut()) {
+            console.log("Permutation computation for", this.query, "timed out after", this.timeoutSeconds, "seconds");
+        } else {
+            console.log("Permutation computation for", this.query, "finished in", (new Date() - this.timeStart) / 1000, "seconds");
+        }
+        return permutations.slice(0, this.k);
     }
-    return {
-        permutations: permutations.slice(0, k),
-        timeout: timeout,
-    }
+
 }
 
 
@@ -320,18 +307,22 @@ onmessage = (event) => {
     const results = [];
     let i = 0;
     for (const prefix of prefixes) {
-        const topPermutationsResult = computeTopPermutations(
+        const topPermutationsResult = new PermutationGenerator(
             model,
             prefix.pool.join(""),
             options.k,
             options.timeout,
             options.minimumScore,
             options.minimumTokenLength,
-            options.minimumTokenOccurrences);
-        for (const permutation of topPermutationsResult.permutations) {
+            options.minimumTokenOccurrences,
+            options.attenuation,
+            options.scoringStrategyMinimax)
+            .computeTopPermutations();
+        for (const permutation of topPermutationsResult) {
             results.push({
                 string: prefix.prefix == null ? capitalize(permutation.word) : `${capitalize(prefix.prefix)} ${capitalize(permutation.word)}`,
                 score: permutation.score,
+                details: permutation.details,
             });
         }
         i++;

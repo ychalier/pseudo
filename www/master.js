@@ -59,6 +59,8 @@ window.addEventListener("load", () => {
             minimumTokenLength: parseInt(formData.get("minl")),
             minimumTokenOccurrences: 0, //parseInt(formData.get("mino")),
             prefix: formData.get("prefix") == "" ? null : formData.get("prefix"),
+            attenuation: parseFloat(formData.get("attenuation")),
+            scoringStrategyMinimax: formData.has("minimax"),
             timeout: parseFloat(formData.get("timeout"))
         }
         worker.postMessage([query, options]);
