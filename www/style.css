@@ -28,13 +28,21 @@ body {
     background-repeat: repeat;
 }
 
+a {
+    color: var(--color-primary-dark);
+}
+
+a:visited {
+    color: var(--color-primary-darker);
+}
+
 #content {
     box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
     max-width: 800px;
-    margin: .8rem .4rem;
+    margin: .8rem;
     border-radius: .8rem;
     width: 100%;
     background: var(--color-background);
@@ -112,7 +120,13 @@ button {
     border-radius: .2rem;
     border: 1px solid var(--color-primary-dark);
     background: var(--color-primary-light);
-    outline-color: var(--color-primary-darker);
+}
+
+a:focus,
+input:focus,
+select:focus,
+button:focus {
+    outline: 1px solid var(--color-primary-darker);
 }
 
 input[type="submit"],
