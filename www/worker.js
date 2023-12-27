@@ -172,8 +172,9 @@ class PermutationGenerator {
             letters = ["$"];
             isOver = true;
         }
+
+        const candidates = [];
         for (const letter of new Set(letters)) {
-            if (this.timedOut()) break;
             const token = this.findLongestSuffix(word, letter);
             if (token == null) continue;
             const length = token.length;
@@ -186,6 +187,22 @@ class PermutationGenerator {
             
             if (score < this.minimumScore) continue;
             if (score < this.bestScores[0]) continue;
+            candidates.push({
+                token: token,
+                letter: letter,
+                score: score,
+            });
+        }
+        candidates.sort((a, b) => {
+            const tokenLengthDifference = b.token.length - a.token.length;
+            if (tokenLengthDifference == 0) return b.score - a.score;
+            return tokenLengthDifference;
+        });
+        for (const candidate of candidates) {
+            if (this.timedOut()) break;
+            const token = candidate.token;
+            const letter = candidate.letter;
+            const score = candidate.score;
             const currentDetails = {
                 token: token,
                 letter: letter,
