@@ -1,12 +1,18 @@
 window.addEventListener("load", () => {
 
+    function toggleUiElements(formEnabled) {
+        document.getElementById("button-interrupt").disabled = formEnabled;
+        document.getElementById("form-query").querySelectorAll("input,select").forEach(input => {
+            input.disabled = !formEnabled;
+        });
+    }
+
     function createWorker() {
         let w = new Worker("worker.js");
         w.onmessage = (event) => {
             if (event.data.status == "finished") {
                 document.getElementById("progress-container").classList.add("hidden");
-                document.getElementById("button-interrupt").disabled = true;
-                document.getElementById("button-generate").disabled = false;
+                toggleUiElements(true);
                 if (event.data.success) {
                     const output = document.getElementById("output");
                     output.innerHTML = "";
@@ -47,7 +53,7 @@ window.addEventListener("load", () => {
                                 } else {
                                     letterTextElement.textContent = result.word.charAt(i);
                                 }
-                                letterElement.title = result.details[i].score.toFixed(3);
+                                letterElement.title = `${result.details[i].token}-${result.details[i].letter}: ${result.details[i].score.toFixed(3)}`;
                                 letterElement.classList.add(`letter-${result.details[i].token.length}`);
                             }
                             const scoreElement = resultElement.appendChild(document.createElement("span"));
@@ -70,8 +76,7 @@ window.addEventListener("load", () => {
                 const progress = document.getElementById("progress");
                 progress.value = event.data.current;
                 progress.max = event.data.total;
-                document.getElementById("button-interrupt").disabled = false;
-                document.getElementById("button-generate").disabled = true;
+                toggleUiElements(false);
             }
         }
         return w;
@@ -83,8 +88,7 @@ window.addEventListener("load", () => {
     document.getElementById("button-interrupt").addEventListener("click", (event) => {
         worker.terminate();
         document.getElementById("progress-status").innerHTML = "Interrompu";
-        document.getElementById("button-interrupt").disabled = true;
-        document.getElementById("button-generate").disabled = false;
+        toggleUiElements(true);
         worker = createWorker();
     });
 
@@ -104,8 +108,7 @@ window.addEventListener("load", () => {
         worker.postMessage([query, options]);
         document.getElementById("output").innerHTML = "";
         document.getElementById("progress-status").innerHTML = "Génération…";
-        document.getElementById("button-interrupt").disabled = false;
-        document.getElementById("button-generate").disabled = true;
+        toggleUiElements(false);
         document.getElementById("progress-container").classList.remove("hidden");
     });
     
