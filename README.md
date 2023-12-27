@@ -3,7 +3,7 @@
 Generates permutations of lists of letters that sound like real proper nouns.
 
 - Try it at [chalier.fr/pseudo/](https://chalier.fr/pseudo/)
-- Read about how it works in [this blog article](#)
+- Read about how it works in [this blog article](https://chalier.fr/blog/pseudonym-generator-with-anagrams)
 
 ## Built With
 
