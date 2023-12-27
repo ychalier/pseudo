@@ -126,7 +126,7 @@ function setsDifference(a, b) {
 
 class PermutationGenerator {
 
-    constructor(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences, attenuation, scoringStrategyMinimax) {
+    constructor(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences, attenuation) {
         this.model = model;
         this.query = query;
         this.k = k;
@@ -135,7 +135,6 @@ class PermutationGenerator {
         this.minimumTokenLength = minimumTokenLength;
         this.minimumTokenOccurrences = minimumTokenOccurrences;
         this.attenuation = attenuation;
-        this.scoringStrategyMinimax = scoringStrategyMinimax;
         this.timeStart = null;
         this.bestScores = null;
     }
@@ -168,7 +167,7 @@ class PermutationGenerator {
         return null;
     }
 
-    *iteratePermutationsAux(word, letters) {
+    *iteratePermutationsAux(word, letters, topScore) {
         let isOver = false;
         if (letters.length == 0) {
             letters = ["$"];
@@ -181,13 +180,13 @@ class PermutationGenerator {
             const length = token.length;
             if (length < this.minimumTokenLength && !token.startsWith("^")) continue;
             if (this.model.tokenOccurrences[token] < this.minimumTokenOccurrences) continue;
-            const score = Math.pow(this.model.score(token, letter), 1 - this.attenuation);
+            const score = Math.pow(this.model.score(token, letter), 1 - this.attenuation) * topScore;
             if (score < this.minimumScore) continue;
-            if (this.scoringStrategyMinimax && score < this.bestScores[0]) continue;
+            if (score < this.bestScores[0]) continue;
             const currentDetails = {
                 token: token,
                 letter: letter,
-                score: score,
+                score: score / topScore,
             }
             if (isOver) {
                 const result = {
@@ -197,14 +196,14 @@ class PermutationGenerator {
                 };
                 yield result;
             } else {
-                const continuations = this.iteratePermutationsAux(word + letter, copyArrayWithout(letters, letter));
+                const continuations = this.iteratePermutationsAux(word + letter, copyArrayWithout(letters, letter), score);
                 while (!this.timedOut()) {
                     const continuation = continuations.next();
                     if (continuation.done) break;
                     if (continuation.value.score == 0) continue;
                     const result = {
                         word: continuation.value.word,
-                        score: this.scoringStrategyMinimax ? Math.min(score, continuation.value.score) : score + continuation.value.score,
+                        score: continuation.value.score,
                         details: [currentDetails, ...continuation.value.details],
                     };
                     yield result;
@@ -218,14 +217,14 @@ class PermutationGenerator {
         for (let i = 0; i < this.k; i++) {
             this.bestScores.push(0);
         }
-        const permutations = this.iteratePermutationsAux("^", this.query.split(""));
+        const permutations = this.iteratePermutationsAux("^", this.query.split(""), 1);
         while (true) {
             const permutation = permutations.next();
             if (permutation.done) break;
             this.insertScore(permutation.value.score);
             const result = {
                 word: permutation.value.word.slice(1),
-                score: this.scoringStrategyMinimax ? permutation.value.score : permutation.value.score / this.query.length,
+                score: permutation.value.score,
                 details: permutation.value.details,
             }
             yield result;
@@ -315,8 +314,7 @@ onmessage = (event) => {
             options.minimumScore,
             options.minimumTokenLength,
             options.minimumTokenOccurrences,
-            options.attenuation,
-            options.scoringStrategyMinimax)
+            options.attenuation)
             .computeTopPermutations();
         for (const permutation of topPermutationsResult) {
             results.push({
