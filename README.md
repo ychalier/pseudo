@@ -10,7 +10,7 @@ Generates permutations of lists of letters that sound like real proper nouns.
 - [zip.js](https://gildas-lormeau.github.io/zip.js/)
 - [xz/fonts](https://fonts.xz.style/)
 
-# License
+## License
 
 This project is licensed under the GPL-3.0 license.
 
