@@ -16,7 +16,7 @@
             <h1>Pseudonyme en anagramme</h1>
         
             <form id="form-query">
-                <div class="inline-form">
+                <div class="inline-form inline-form-wrap-sm">
                     <div class="inline-form-item inline-form-item-large">
                         <label for="input-query">Requête</label>
                         <input id="input-query" type="text" required placeholder="Jean Dupont" name="query" autofocus />
@@ -38,19 +38,15 @@
                     <div class="inline-form inline-form-wrap">
                         <div class="inline-form-item" title="Nombre de résultats considérés par préfixe">
                             <label for="input-k">Résultats</label>
-                            <input id="input-k" type="number" name="k" placeholder="2" value="2" min="1" size="7"/>
+                            <input id="input-k" type="number" name="k" required placeholder="2" value="2" min="1" size="7"/>
                         </div>
                         <div class="inline-form-item" title="Score minimal des résultats">
                             <label for="input-mins">Score min.</label>
-                            <input id="input-mins" type="number" name="mins" required placeholder="0.1" value="0" min="0" step="0.001" size="7" />
+                            <input id="input-mins" type="number" name="mins" required placeholder="0" value="0" min="0" step="0.001" size="7" />
                         </div>
                         <div class="inline-form-item" title="Taille minimale des n-grammes">
                             <label for="input-minl">Taille min.</label>
-                            <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="0" size="7" />
-                        </div>
-                        <div class="inline-form-item" title="Atténuation des hautes fréquences">
-                            <label for="input-attenuation">Atténuation</label>
-                            <input id="input-attenuation" type="number" name="attenuation" required placeholder="0.5" value="0.5" min="0" max="1" step="0.01" size="7" />
+                            <input id="input-minl" type="number" name="minl" required placeholder="2" value="2" min="1" max="5" size="7" />
                         </div>
                         <div class="inline-form-item" title="Délais d'attente en secondes">
                             <label for="input-timeout">Délais</label>
@@ -69,7 +65,7 @@
             <div id="output"></div>
         </section>
         <footer>
-            Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a>
+            Développé et maintenu par <a href="https://chalier.fr">Yohan Chalier</a> · Code source sur <a href="https://github.com/ychalier/pseudo">GitHub</a> · Conçu avec <a href="https://gildas-lormeau.github.io/zip.js/">zip.js</a> et <a href="https://github.com/xz/fonts">xz/fonts</a>
         </footer>
     </div>
 </body>

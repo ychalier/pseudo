@@ -126,7 +126,7 @@ function setsDifference(a, b) {
 
 class PermutationGenerator {
 
-    constructor(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences, attenuation) {
+    constructor(model, query, k, timeoutSeconds, minimumScore, minimumTokenLength, minimumTokenOccurrences) {
         this.model = model;
         this.query = query;
         this.k = k;
@@ -134,7 +134,6 @@ class PermutationGenerator {
         this.minimumScore = minimumScore;
         this.minimumTokenLength = minimumTokenLength;
         this.minimumTokenOccurrences = minimumTokenOccurrences;
-        this.attenuation = attenuation;
         this.timeStart = null;
         this.bestScores = null;
     }
@@ -180,7 +179,11 @@ class PermutationGenerator {
             const length = token.length;
             if (length < this.minimumTokenLength && !token.startsWith("^")) continue;
             if (this.model.tokenOccurrences[token] < this.minimumTokenOccurrences) continue;
-            const score = Math.pow(this.model.score(token, letter), 1 - this.attenuation) * topScore;
+            
+            // Using the square root to avoid low scores
+            // that would not be human-readable
+            const score = Math.sqrt(this.model.score(token, letter)) * topScore;
+            
             if (score < this.minimumScore) continue;
             if (score < this.bestScores[0]) continue;
             const currentDetails = {
@@ -313,8 +316,7 @@ onmessage = (event) => {
             options.timeout,
             options.minimumScore,
             options.minimumTokenLength,
-            options.minimumTokenOccurrences,
-            options.attenuation)
+            options.minimumTokenOccurrences)
             .computeTopPermutations();
         for (const permutation of topPermutationsResult) {
             results.push({

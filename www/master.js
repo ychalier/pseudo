@@ -58,7 +58,7 @@ window.addEventListener("load", () => {
                             }
                             const scoreElement = resultElement.appendChild(document.createElement("span"));
                             scoreElement.classList.add("score");
-                            scoreElement.textContent = `(${result.score.toFixed(3)})`;
+                            scoreElement.textContent = `(${(result.score * 1000).toFixed(3)})`;
                         }
                     } else {
                         output.innerHTML = "Aucun résultat";
@@ -98,11 +98,10 @@ window.addEventListener("load", () => {
         const query = formData.get("query");
         const options = {
             k: parseInt(formData.get("k")),
-            minimumScore: parseFloat(formData.get("mins")),
+            minimumScore: parseFloat(formData.get("mins")) / 1000,
             minimumTokenLength: parseInt(formData.get("minl")),
             minimumTokenOccurrences: 0, //parseInt(formData.get("mino")),
             prefix: formData.get("prefix") == "" ? null : formData.get("prefix"),
-            attenuation: parseFloat(formData.get("attenuation")),
             timeout: parseFloat(formData.get("timeout"))
         }
         worker.postMessage([query, options]);
@@ -110,6 +109,9 @@ window.addEventListener("load", () => {
         document.getElementById("progress-status").innerHTML = "Génération…";
         toggleUiElements(false);
         document.getElementById("progress-container").classList.remove("hidden");
+        const progress = document.getElementById("progress");
+        progress.value = 0;
+        progress.max = 1;
     });
     
 });

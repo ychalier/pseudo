@@ -1,5 +1,15 @@
+@import url("https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/fira-code.min.css");
+@import url("https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/fira-sans.min.css");
+
 * {
-    font-family: sans-serif;
+    font-family: "Fira Sans", sans-serif;
+    --color-background: #FEFFFF;
+    --color-primary: #CFCDF3;
+    --color-primary-light: #ededff;
+    --color-primary-dark: #645E9D;
+    --color-primary-darker: #392B58;
+    --color-primary-darkest: #2D0320;
+    --color-accent: #FFC857;
 }
 
 html {
@@ -18,10 +28,6 @@ body {
     background-repeat: repeat;
 }
 
-pre {
-    font-family: monospace;
-}
-
 #content {
     box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
     display: flex;
@@ -31,7 +37,7 @@ pre {
     margin: .8rem .4rem;
     border-radius: .8rem;
     width: 100%;
-    background: #feffff;
+    background: var(--color-background);
 }
 
 header {
@@ -43,7 +49,6 @@ header {
     height: 100%;
     overflow-y: auto;
     padding: 1em 2em;
-    background: lavenderblush;
     box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
 }
 
@@ -62,6 +67,15 @@ footer {
 
 .inline-form-wrap {
     flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+    .inline-form-wrap-sm {
+        flex-wrap: wrap;
+    }
+    .inline-form-wrap-sm .inline-form-item {
+        margin-bottom: .2rem;
+    }
 }
 
 .inline-form-item {
@@ -96,17 +110,16 @@ button {
     font: inherit;
     padding: .4rem;
     border-radius: .2rem;
-    border: 1px solid #8d8ca6;
-    background: #ffffff;
-}
-
-input:focus {
-    outline: none;
+    border: 1px solid var(--color-primary-dark);
+    background: var(--color-primary-light);
+    outline-color: var(--color-primary-darker);
 }
 
 input[type="submit"],
 button {
-    background: rgb(245, 240, 255);
+    border-color: var(--color-primary-darker);
+    background-color: var(--color-primary-dark);
+    color: white;
 }
 
 input[type="submit"]:not([disabled]),
@@ -116,7 +129,13 @@ button:not([disabled]) {
 
 input[type="submit"]:hover:not([disabled]),
 button:hover:not([disabled]) {
-    background: rgb(216, 196, 255);
+    border-color: var(--color-primary-darkest);
+    background-color: var(--color-primary-darker);
+}
+
+input[type="submit"]:disabled,
+button:disabled {
+    opacity: .6;
 }
 
 details summary {
@@ -139,13 +158,13 @@ details summary {
     width: 100%;
     box-sizing: border-box;
     border-radius: .2rem;
-    border: 1px solid #8d8ca6;
+    border: 1px solid var(--color-primary-darker);
     height: .4rem;
 }
 
 #progress::-moz-progress-bar,
 #progress::-webkit-progress-bar {
-    background-color: #8d8ca6;
+    background-color: var(--color-primary-dark);
 }
 
 .hidden {
@@ -160,7 +179,7 @@ details summary {
 .letter,
 .letter-text,
 .score {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Fira Code", monospace;
 }
 
 .letter {
@@ -175,21 +194,22 @@ details summary {
 .letter-1:hover::before,
 .letter-2:hover::before,
 .letter-3:hover::before,
-.letter-4:hover::before {
+.letter-4:hover::before,
+.letter-5:hover::before {
     position: absolute;
     bottom: 0;
     right: 0;
-    border-bottom: 2px solid #d2d0f6;
+    border-bottom: 2px solid var(--color-accent);
     pointer-events: none;
     z-index: 1;
 }
 
 .result:hover .letter-lowest {
-    background:  #ff000080;
+    background:  #ff000020;
 }
 
 .result:hover .letter-highest {
-    background: #00ff0080;
+    background: #00ff0020;
 }
 
 .letter:hover::after {
@@ -197,7 +217,7 @@ details summary {
     content: " ";
     bottom: 0;
     right: 0;
-    border-bottom: 2px solid #8d8ca6;
+    border-bottom: 2px solid var(--color-primary-dark);
     z-index: 1;
 }
 
@@ -215,4 +235,8 @@ details summary {
 
 .letter-4:hover::before {
     content: "     ";
+}
+
+.letter-5:hover::before {
+    content: "      ";
 }
