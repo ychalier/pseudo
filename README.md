@@ -1,31 +1,18 @@
-# Pseudonym Generator using Anagrams
+# Pseudonym Generator with Anagrams
 
-Try it at https://chalier.fr/pseudo/.
+Generates permutations of lists of letters that sound like real proper nouns.
 
-## How It Works
-
-Inspiration from [rrenaud/Gibberish-Detector](https://github.com/rrenaud/Gibberish-Detector).
-
-Given the input, we first look for a possible firstname. Once found, we look at
-the remaining letters and try to make a pronounceable word out of them. To do so,
-we use a Markov chain encoding the transition between ngrams of variable sizes
-(1, 2 and 3). The model is trained on a large input text. Then, until all availables
-letters are used, we pick the longest and most probable ngram continuing what
-has been already generated.
-
-Instead of returning one solution, all solutions are explored (actually, the
-parameter `k` allow for controlling how many ngrams are tried) and sorted
-according the combination of the probabilities of all the transitions used in
-the generation. This computation is done by assuming independence, yet this is
-a wrong assumption. But for this use case, it does not seem to be much of an issue.
-
-The dataset used to train the Markov chain model is the original fulltext of
-*Les Misérables* by Victor Hugo. Firstnames are mainly extracted from
+- Try it at [chalier.fr/pseudo/](https://chalier.fr/pseudo/)
+- Read about how it works in [this blog article](#)
 
 ## Built With
 
 - [zip.js](https://gildas-lormeau.github.io/zip.js/)
 - [xz/fonts](https://fonts.xz.style/)
+
+# License
+
+This project is licensed under the GPL-3.0 license.
 
 ## Contributing
 
@@ -49,9 +36,9 @@ Then, put the generated TSV file in the [model.zip](www/model.zip) archive. The 
 
 The [model.zip](www/model.zip) archive contains text files serving as prefix list:
 
-- [firstnames.txt](data/firstnames.txt) (currently drawn from [Wikipedia](https://fr.wikipedia.org/wiki/Liste_de_pr%C3%A9noms_fran%C3%A7ais_et_de_la_francophonie))
+- [firstnames.txt](data/firstnames.txt) (mostly drawn from [Wikipedia](https://fr.wikipedia.org/wiki/Liste_de_pr%C3%A9noms_fran%C3%A7ais_et_de_la_francophonie))
 - [streets.txt](data/streets.txt) 
 
-You may add your own lists within the archive. Again, if you put those lists within the [data](data/) folder, the [archive.ps1](data/archive.ps1) and [archive.sh](data/archive.sh) scripts can do that for you.
+You may add your own list within the archive. It should contain one entry per line. Normalization is performed on the fly, so you do not have to worry about it. Again, if you put it inside the [data](data/) folder, the [archive.ps1](data/archive.ps1) and [archive.sh](data/archive.sh) scripts can add it to the archive for you.
 
-Those lists should contain one entry per line. Normalization is performed on the fly, so you should not have to worry about it.
+Then, make sure to add the filename of this list as an option for the prefix `select` tag in [index.html](www/index.html) (option's value should be the filename with the extension).
