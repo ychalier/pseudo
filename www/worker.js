@@ -92,7 +92,7 @@ function loadModelBlob(blob) {
             } else {
                 const textWriter = new zip.TextWriter();
                 entry.getData(textWriter).then(text => {
-                    prefixSets[entry.filename.replace(".txt", "")] = loadPrefixText(text);
+                    prefixSets[entry.filename] = loadPrefixText(text);
                 });
             }
         }
